@@ -472,6 +472,7 @@ export function answer(input, allMeals = []) {
   if (found) return found;
 
   return {
+    unknown: true,
     text: "Je n'ai pas bien compris 🤔\n\n" + TEXTS.help,
   };
 }

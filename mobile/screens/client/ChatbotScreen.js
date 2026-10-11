@@ -12,12 +12,12 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { getMeals } from "../../services/api";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { answer } from "../../utils/chatbot";
 import { imageUrl } from "../../utils/image";
 import { colors, radius, shadow, formatPrice } from "../../theme";
+import { getMeals, chatRequest } from "../../services/api";
 
 const QUICK = [
   "Que me conseillez-vous ?",
@@ -64,11 +64,28 @@ export default function ChatbotScreen({ navigation }) {
     setInput("");
     push({ from: "user", text });
     setTyping(true);
-    setTimeout(() => {
-      const r = answer(text, meals);
-      push({ from: "bot", text: r.text, meals: r.meals });
-      setTyping(false);
-    }, 450);
+
+    const r = answer(text, meals);
+
+    // rules understood (including all safety answers): keep them
+    if (!r.unknown) {
+      setTimeout(() => {
+        push({ from: "bot", text: r.text, meals: r.meals });
+        setTyping(false);
+      }, 450);
+      return;
+    }
+
+    // rules did not understand: ask the local AI, fall back to the rule answer
+    chatRequest(text)
+      .then((ai) => {
+        const shown = (ai.mealIds || [])
+          .map((id) => meals.find((m) => m._id === id))
+          .filter(Boolean);
+        push({ from: "bot", text: ai.text, meals: shown });
+      })
+      .catch(() => push({ from: "bot", text: r.text }))
+      .finally(() => setTyping(false));
   };
 
   const add = (meal) => {

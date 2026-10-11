@@ -59,7 +59,8 @@ const mealBody = (meal, image) => ({
   imageBase64: image ? image.base64 : undefined,
   imageExt: image ? image.ext : undefined,
 });
-
+export const chatRequest = (message) =>
+  jsonSend("POST", "/api/chat", { message });
 // Meals
 export const getMeals = ({ search, categorie } = {}) => {
   const params = new URLSearchParams();

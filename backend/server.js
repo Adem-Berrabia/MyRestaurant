@@ -32,7 +32,7 @@ app.use("/api/reservations", require("./routes/reservations"));
 app.use("/api/admin", require("./routes/admin"));
 
 app.get("/", (req, res) => res.send("MyRestaurant API running"));
-
+app.use('/api/chat', require('./routes/chat'));
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {

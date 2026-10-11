@@ -171,5 +171,25 @@ router.patch(
     res.json(user);
   }),
 );
-
+// All reviews across every dish, most recent first
+router.get(
+  "/avis",
+  h(async (req, res) => {
+    const meals = await Meal.find({ nombreAvis: { $gt: 0 } }).select(
+      "nom avis noteMoyenne nombreAvis",
+    );
+    const list = meals.flatMap((m) =>
+      m.avis.map((a) => ({
+        mealId: m._id,
+        mealNom: m.nom,
+        nomUser: a.nomUser,
+        note: a.note,
+        commentaire: a.commentaire,
+        date: a.date,
+      })),
+    );
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(list);
+  }),
+);
 module.exports = router;

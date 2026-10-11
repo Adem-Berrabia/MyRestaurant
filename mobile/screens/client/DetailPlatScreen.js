@@ -5,26 +5,55 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   ActivityIndicator,
   Alert,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getMeal } from "../../services/api";
+import { getMeal, addAvis } from "../../services/api";
 import { useCart } from "../../context/CartContext";
 import { imageUrl } from "../../utils/image";
 import { colors, radius, formatPrice } from "../../theme";
+
+function Stars({ value, size = 18, onPress }) {
+  return (
+    <View style={{ flexDirection: "row" }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <TouchableOpacity
+          key={n}
+          disabled={!onPress}
+          onPress={() => onPress && onPress(n)}
+          hitSlop={4}
+        >
+          <Ionicons
+            name={n <= value ? "star" : "star-outline"}
+            size={size}
+            color="#F5A623"
+            style={{ marginRight: 2 }}
+          />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
 
 export default function DetailPlatScreen({ route, navigation }) {
   const { id } = route.params;
   const { addToCart } = useCart();
   const [meal, setMeal] = useState(null);
   const [qty, setQty] = useState(1);
+  const [myNote, setMyNote] = useState(0);
+  const [myComment, setMyComment] = useState("");
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
+  const load = () =>
     getMeal(id)
       .then(setMeal)
       .catch(() => Alert.alert("Erreur", "Plat introuvable"));
+
+  useEffect(() => {
+    load();
   }, [id]);
 
   if (!meal) {
@@ -49,6 +78,27 @@ export default function DetailPlatScreen({ route, navigation }) {
       },
     ]);
   };
+
+  const submitAvis = async () => {
+    if (!myNote) {
+      Alert.alert("Note requise", "Choisissez une note de 1 à 5 étoiles.");
+      return;
+    }
+    setSending(true);
+    try {
+      const updated = await addAvis(id, myNote, myComment.trim());
+      setMeal(updated);
+      setMyNote(0);
+      setMyComment("");
+      Alert.alert("Merci !", "Votre avis a été enregistré.");
+    } catch (e) {
+      Alert.alert("Erreur", e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const avis = meal.avis || [];
 
   return (
     <View style={styles.container}>
@@ -86,10 +136,66 @@ export default function DetailPlatScreen({ route, navigation }) {
           <Text style={styles.name}>{meal.nom}</Text>
           <Text style={styles.price}>{formatPrice(meal.prix)}</Text>
 
+          {meal.nombreAvis > 0 ? (
+            <View style={styles.ratingRow}>
+              <Stars value={Math.round(meal.noteMoyenne)} />
+              <Text style={styles.ratingText}>
+                {meal.noteMoyenne.toFixed(1)} · {meal.nombreAvis} avis
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.ratingText, { marginTop: 8 }]}>
+              Aucun avis pour le moment
+            </Text>
+          )}
+
           <Text style={styles.h}>Description</Text>
           <Text style={styles.desc}>
             {meal.description || "Aucune description disponible."}
           </Text>
+
+          <Text style={styles.h}>Laisser un avis</Text>
+          <View style={styles.reviewBox}>
+            <Stars value={myNote} size={28} onPress={setMyNote} />
+            <TextInput
+              style={styles.input}
+              placeholder="Votre commentaire (optionnel)"
+              placeholderTextColor={colors.muted}
+              value={myComment}
+              onChangeText={setMyComment}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[styles.submitBtn, sending && { opacity: 0.6 }]}
+              onPress={submitAvis}
+              disabled={sending}
+            >
+              <Text style={styles.submitText}>
+                {sending ? "Envoi..." : "Envoyer mon avis"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {avis.length > 0 ? (
+            <>
+              <Text style={styles.h}>Avis des clients</Text>
+              {avis
+                .slice()
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map((a, i) => (
+                  <View key={i} style={styles.avisCard}>
+                    <View style={styles.avisHead}>
+                      <Text style={styles.avisName}>{a.nomUser}</Text>
+                      <Stars value={a.note} size={14} />
+                    </View>
+                    {a.commentaire ? (
+                      <Text style={styles.avisText}>{a.commentaire}</Text>
+                    ) : null}
+                  </View>
+                ))}
+            </>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -160,6 +266,17 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: 4,
   },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  ratingText: {
+    fontSize: 13,
+    color: colors.muted,
+    marginLeft: 8,
+    fontWeight: "600",
+  },
   h: {
     fontSize: 17,
     fontWeight: "700",
@@ -168,6 +285,48 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   desc: { fontSize: 15, lineHeight: 23, color: colors.muted },
+  reviewBox: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  input: {
+    marginTop: 12,
+    minHeight: 60,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: 12,
+    fontSize: 14,
+    color: colors.text,
+    textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  submitBtn: {
+    marginTop: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    alignItems: "center",
+  },
+  submitText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  avisCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avisHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  avisName: { fontSize: 14, fontWeight: "700", color: colors.text },
+  avisText: { fontSize: 13, color: colors.muted, marginTop: 6, lineHeight: 18 },
   bar: {
     flexDirection: "row",
     alignItems: "center",

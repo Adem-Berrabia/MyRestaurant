@@ -162,5 +162,45 @@ router.delete("/:id", adminOnly, async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+// Client leaves (or updates) a review on a dish — one review per user per dish
+router.post("/:id/avis", auth, async (req, res) => {
+  try {
+    const { note, commentaire } = req.body;
+    const n = Number(note);
+    if (!n || n < 1 || n > 5) {
+      return res
+        .status(400)
+        .json({ message: "La note doit être entre 1 et 5." });
+    }
 
+    const meal = await Meal.findById(req.params.id);
+    if (!meal) return res.status(404).json({ message: "Plat introuvable" });
+
+    const existing = meal.avis.find(
+      (a) => String(a.user) === String(req.user.id),
+    );
+    if (existing) {
+      existing.note = n;
+      existing.commentaire = String(commentaire || "").slice(0, 500);
+      existing.date = new Date();
+    } else {
+      meal.avis.push({
+        user: req.user.id,
+        nomUser: req.user.nom || "Client",
+        note: n,
+        commentaire: String(commentaire || "").slice(0, 500),
+      });
+    }
+
+    meal.nombreAvis = meal.avis.length;
+    meal.noteMoyenne =
+      meal.avis.reduce((sum, a) => sum + a.note, 0) / meal.avis.length;
+
+    await meal.save();
+    res.json(meal);
+  } catch (e) {
+    console.error("POST /meals/:id/avis error:", e);
+    res.status(500).json({ message: e.message });
+  }
+});
 module.exports = router;

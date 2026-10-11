@@ -32,6 +32,7 @@ const toImage = (asset) => {
 
 export default function GestionMenuScreen() {
   const [meals, setMeals] = useState([]);
+  const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
@@ -329,73 +330,94 @@ export default function GestionMenuScreen() {
       ) : null}
 
       <Text style={styles.section}>Plats du menu ({meals.length})</Text>
-      {meals.map((m) => {
-        const soldOut = m.disponible === false;
-        return (
-          <View key={m._id} style={styles.row}>
-            {m.image ? (
-              <Image
-                source={{ uri: imageUrl(m.image) }}
-                style={[styles.thumb, soldOut && { opacity: 0.4 }]}
-              />
-            ) : (
-              <View style={[styles.thumb, styles.thumbPlaceholder]}>
-                <Ionicons
-                  name="restaurant-outline"
-                  size={22}
-                  color={colors.muted}
+
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color={colors.muted} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher un plat..."
+          placeholderTextColor={colors.muted}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 ? (
+          <TouchableOpacity onPress={() => setSearch("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={18} color={colors.muted} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {meals
+        .filter((m) =>
+          m.nom.toLowerCase().includes(search.trim().toLowerCase()),
+        )
+        .map((m) => {
+          const soldOut = m.disponible === false;
+          return (
+            <View key={m._id} style={styles.row}>
+              {m.image ? (
+                <Image
+                  source={{ uri: imageUrl(m.image) }}
+                  style={[styles.thumb, soldOut && { opacity: 0.4 }]}
                 />
-              </View>
-            )}
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.rowName}>{m.nom}</Text>
-              <Text style={styles.rowSub}>
-                {m.categorie} · {Number(m.prix).toFixed(2)} DT
-              </Text>
-              {!Array.isArray(m.allergenes) ? (
-                <Text style={styles.warn}>⚠ Allergènes non renseignés</Text>
-              ) : null}
-              <TouchableOpacity
-                style={[
-                  styles.stock,
-                  soldOut ? styles.stockOff : styles.stockOn,
-                ]}
-                onPress={() => toggleAvailability(m)}
-              >
-                <Ionicons
-                  name={soldOut ? "close-circle" : "checkmark-circle"}
-                  size={14}
-                  color={soldOut ? colors.danger : colors.success}
-                />
-                <Text
-                  style={[
-                    styles.stockText,
-                    { color: soldOut ? colors.danger : colors.success },
-                  ]}
-                >
-                  {soldOut ? "Épuisé" : "Disponible"}
+              ) : (
+                <View style={[styles.thumb, styles.thumbPlaceholder]}>
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={22}
+                    color={colors.muted}
+                  />
+                </View>
+              )}
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.rowName}>{m.nom}</Text>
+                <Text style={styles.rowSub}>
+                  {m.categorie} · {Number(m.prix).toFixed(2)} DT
                 </Text>
+                {!Array.isArray(m.allergenes) ? (
+                  <Text style={styles.warn}>⚠ Allergènes non renseignés</Text>
+                ) : null}
+                <TouchableOpacity
+                  style={[
+                    styles.stock,
+                    soldOut ? styles.stockOff : styles.stockOn,
+                  ]}
+                  onPress={() => toggleAvailability(m)}
+                >
+                  <Ionicons
+                    name={soldOut ? "close-circle" : "checkmark-circle"}
+                    size={14}
+                    color={soldOut ? colors.danger : colors.success}
+                  />
+                  <Text
+                    style={[
+                      styles.stockText,
+                      { color: soldOut ? colors.danger : colors.success },
+                    ]}
+                  >
+                    {soldOut ? "Épuisé" : "Disponible"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={() => startEdit(m)} hitSlop={6}>
+                <Ionicons
+                  name="create-outline"
+                  size={23}
+                  color={colors.primary}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => confirmDelete(m)} hitSlop={6}>
+                <Ionicons
+                  name="trash-outline"
+                  size={23}
+                  color={colors.danger}
+                  style={styles.icon}
+                />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => startEdit(m)} hitSlop={6}>
-              <Ionicons
-                name="create-outline"
-                size={23}
-                color={colors.primary}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => confirmDelete(m)} hitSlop={6}>
-              <Ionicons
-                name="trash-outline"
-                size={23}
-                color={colors.danger}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
-        );
-      })}
+          );
+        })}
     </ScrollView>
   );
 }
@@ -467,6 +489,23 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 28,
     marginBottom: 10,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    height: 44,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: colors.text,
   },
   row: {
     flexDirection: "row",

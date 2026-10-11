@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme";
-
+import AdminAvisScreen from "../screens/admin/AdminAvisScreen";
 import AuthScreen from "../screens/auth/AuthScreen";
 import AccueilScreen from "../screens/client/AccueilScreen";
 import MenuScreen from "../screens/client/MenuScreen";
@@ -39,6 +39,7 @@ const ICONS = {
   AdminOrders: "receipt",
   AdminMeals: "fast-food",
   AdminReservations: "calendar",
+  AdminAvis: "star",
 };
 
 const tabOptions = ({ route }) => ({
@@ -188,6 +189,11 @@ function AdminTabs() {
         name="AdminReservations"
         component={AdminReservationsScreen}
         options={{ title: "Réservations", tabBarLabel: "Réserv." }}
+      />
+      <Tab.Screen
+        name="AdminAvis"
+        component={AdminAvisScreen}
+        options={{ title: "Avis clients", tabBarLabel: "Avis" }}
       />
       <Tab.Screen
         name="Profil"

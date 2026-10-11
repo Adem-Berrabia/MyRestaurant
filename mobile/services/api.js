@@ -103,3 +103,6 @@ export const deleteReservation = (id) =>
 export const getUsers = () => request("/api/admin/users");
 export const setUserRole = (id, role) =>
   jsonSend("PATCH", `/api/admin/users/${id}/role`, { role });
+export const addAvis = (mealId, note, commentaire) =>
+  jsonSend("POST", `/api/meals/${mealId}/avis`, { note, commentaire });
+export const getAdminAvis = () => request("/api/admin/avis");

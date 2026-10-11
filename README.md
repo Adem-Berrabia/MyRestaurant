@@ -2,182 +2,291 @@
 
 # 🍽️ MyRestaurant
 
-**A full-stack restaurant management solution: a mobile app backed by a REST API.**
+**A mobile restaurant app for ordering, table reservations and a virtual assistant, with separate client and admin experiences.**
 
-![Status](https://img.shields.io/badge/status-in%20development-blue)
-![Platform](https://img.shields.io/badge/platform-mobile-lightgrey)
-![License](https://img.shields.io/badge/license-MIT-green)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2057-61DAFB?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![Ollama](https://img.shields.io/badge/AI-Ollama%20(optional)-1F1F1F)
+![n8n](https://img.shields.io/badge/Automation-n8n%20(optional)-EA4B71)
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [API](#-api-overview) • [Roadmap](#-roadmap) • [Contributing](#-contributing)
+Academic project, class DSI3 · Author: **Adem Berrabia**
 
 </div>
 
 ---
 
-## 📖 About
+## Table of contents
 
-**MyRestaurant** is a mobile application that lets customers browse a restaurant's menu, place orders, and interact with the restaurant from their phone. It is powered by a dedicated backend that handles data storage, authentication, and business logic.
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [REST API overview](#rest-api-overview)
+- [Security](#security)
+- [Virtual assistant](#virtual-assistant)
+- [Order alerts with n8n](#order-alerts-with-n8n-optional)
+- [Roadmap](#roadmap)
+- [Author](#author)
 
-The repository is organized as a monorepo:
+---
 
-| Folder      | Description                               |
-|-------------|-------------------------------------------|
-| `backend/`  | Server-side application and REST API      |
-| `mobile/`   | Mobile client application                 |
+## Features
 
-## ✨ Features
+### Client
+- Register, log in and manage a profile (name, password, photo from camera or gallery)
+- Browse the menu, search dishes and filter by category
+- Dish details with price, description, allergens and vegetarian label
+- Favorites
+- Cart with quantities, delete and live total, saved on the device (AsyncStorage)
+- Place an order for dine-in (with table number) or takeaway
+- Order history, with cancellation while the order is still pending
+- Table reservation with date, time slot and party size, checked against opening hours and capacity
+- Virtual assistant for dish advice, allergens and food safety
 
-- 📋 Browse the restaurant menu by category
-- 🔎 View dish details (description, price, image)
-- 🛒 Create and manage orders
-- 🔐 User registration and authentication
-- 🛠️ Menu and order management through the API
-- 📱 Clean, mobile-first user interface
+### Admin
+- Dashboard with orders, revenue, reservations and users
+- Create, edit and delete dishes, upload photos, mark a dish as sold out
+- Process orders and update their status
+- View and delete reservations
+- Manage users and promote or demote their role
+- Role enforced by the server on every admin route, not only hidden in the UI
 
-## 📸 Screenshots
+---
 
-| Home | Menu | Cart |
-|:----:|:----:|:----:|
-| ![Home](docs/screenshots/home.png) | ![Menu](docs/screenshots/menu.png) | ![Cart](docs/screenshots/cart.png) |
+## Screenshots
 
-## 🧰 Tech Stack
+| Login | Menu | Dish details | Cart |
+|---|---|---|---|
+| ![Login](docs/screenshots/login.png) | ![Menu](docs/screenshots/menu.png) | ![Details](docs/screenshots/detail.png) | ![Cart](docs/screenshots/cart.png) |
 
-| Layer      | Technology                                  |
-|------------|---------------------------------------------|
-| Mobile     | [React Native / Flutter / Kotlin / Swift]   |
-| Backend    | [Node.js + Express / Spring Boot / Laravel] |
-| Database   | [MongoDB / MySQL / PostgreSQL]              |
-| Auth       | [JWT]                                       |
-| Tooling    | Git, GitHub                                 |
+| Assistant | Reservation | Admin dashboard | Admin orders |
+|---|---|---|---|
+| ![Assistant](docs/screenshots/assistant.png) | ![Reservation](docs/screenshots/reservation.png) | ![Dashboard](docs/screenshots/admin-dashboard.png) | ![Orders](docs/screenshots/admin-orders.png) |
 
-## 🏗️ Architecture
+---
 
-`````
-┌──────────────┐      HTTP / JSON      ┌──────────────┐      ┌────────────┐
-│  Mobile App  │ ───────────────────▶  │   Backend    │ ───▶ │  Database  │
-│   (mobile/)  │ ◀───────────────────  │  (backend/)  │ ◀─── │            │
-└──────────────┘                       └──────────────┘      └────────────┘
-`````
+## Tech stack
 
-## 📁 Project Structure
+| Layer | Technology |
+|---|---|
+| Mobile app | React Native, Expo SDK 57, React Navigation (tabs and stack) |
+| State | Context API (auth, cart, favorites), AsyncStorage |
+| Native feature | `expo-image-picker` (camera and gallery) |
+| Backend | Node.js, Express |
+| Database | MongoDB with Mongoose |
+| Auth | JWT, bcryptjs |
+| Security | helmet, express-rate-limit, input sanitizing |
+| Optional | Ollama (local AI), n8n (workflow automation), Telegram |
 
-`````
-MyRestaurant/
-├── backend/          # REST API, models, routes, business logic
-├── mobile/           # Mobile application source code
-├── .gitignore
-└── README.md
-`````
+---
 
-## 🚀 Getting Started
+## Architecture
+
+```
+Mobile app (Expo Go)
+   |  HTTP + JSON (JWT in the Authorization header)
+   v
+Express API  --  auth, roles, validation, rate limits
+   |                       |
+   v                       v
+MongoDB                 uploads/ (dish photos)
+(users, meals, orders, reservations)
+```
+
+The app never talks to MongoDB directly. The server checks the token, the role and the data before reading or writing, and recalculates prices and totals itself.
+
+---
+
+## Project structure
+
+```
+myrestaurant/
+├── backend/
+│   ├── server.js
+│   ├── config.js              # opening hours, capacity, limits
+│   ├── createAdmin.js         # creates an admin account
+│   ├── models/                # User, Meal, Order, Reservation
+│   ├── routes/                # auth, meals, orders, reservations, admin, chat
+│   ├── middleware/            # auth, sanitize, rate limiters
+│   ├── utils/                 # n8n notification
+│   └── .env.example
+├── mobile/
+│   ├── App.js
+│   ├── navigation/            # role-based navigation
+│   ├── screens/
+│   │   ├── auth/
+│   │   ├── client/
+│   │   ├── shared/
+│   │   └── admin/
+│   ├── components/
+│   ├── context/               # Auth, Cart, Favorites
+│   ├── services/              # API client
+│   └── utils/                 # chatbot, allergens, dates, images
+└── docs/
+```
+
+---
+
+## Getting started
 
 ### Prerequisites
+- Node.js 18 or newer
+- MongoDB running locally
+- The **Expo Go** app on your phone (SDK 57 version)
+- Phone and computer on the same Wi-Fi network
 
-Make sure you have installed:
+### 1. Clone
 
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) (v18 or later)
-- A running database instance (MongoDB / MySQL / PostgreSQL)
-- Android Studio or Xcode, or the Expo Go app, to run the mobile client
+```bash
+git clone https://github.com/Adem-Berrabia/MyRestaurant-.git
+cd MyRestaurant-
+```
 
-### 1. Clone the repository
+### 2. Backend
 
-`````bash
-git clone https://github.com/Adem-Berrabia/MyRestaurant.git
-cd MyRestaurant
-`````
-
-### 2. Set up the backend
-
-`````bash
+```bash
 cd backend
 npm install
-cp .env.example .env     # then fill in your values
+cp .env.example .env      # on Windows: copy .env.example .env
+```
+
+Edit `.env` (see [Environment variables](#environment-variables)), then create an admin account and start the server:
+
+```bash
+node createAdmin.js "Administrator" admin@myrestaurant.tn "<a strong password>"
 npm start
-`````
+```
 
-The API will be available at `http://localhost:5000`.
+You should see `MongoDB connected` and `Server on port 5000`.
 
-### 3. Set up the mobile app
+### 3. Mobile app
 
-`````bash
+```bash
 cd mobile
 npm install
-npm start
-`````
+```
 
-Then run the app on an emulator or a physical device.
+Open `mobile/config.js` and set the API address to your computer's local IP address:
 
-> ⚠️ Make sure the mobile app points to your backend URL. When using an Android emulator, use `http://10.0.2.2:<port>` instead of `localhost`.
+```js
+export const API_URL = 'http://192.168.1.12:5000';
+```
 
-## ⚙️ Environment Variables
+Find it with `ipconfig` on Windows or `ifconfig` on macOS and Linux. Then start Expo and scan the QR code with Expo Go:
 
-Create a `.env` file inside `backend/`:
+```bash
+npx expo start -c
+```
 
-| Variable       | Description                          | Example                             |
-|----------------|--------------------------------------|-------------------------------------|
-| `PORT`         | Port the server listens on           | `5000`                              |
-| `DB_URI`       | Database connection string           | `mongodb://localhost:27017/myresto` |
-| `JWT_SECRET`   | Secret used to sign auth tokens      | `your_secret_key`                   |
-
-> Never commit your `.env` file. It is already excluded by `.gitignore`.
-
-## 🔌 API Overview
-
-| Method | Endpoint              | Description                | Auth |
-|--------|-----------------------|----------------------------|:----:|
-| POST   | `/api/auth/register`  | Create a new account       |  ❌  |
-| POST   | `/api/auth/login`     | Log in and receive a token |  ❌  |
-| GET    | `/api/menu`           | List all menu items        |  ❌  |
-| GET    | `/api/menu/:id`       | Get a single menu item     |  ❌  |
-| POST   | `/api/orders`         | Create an order            |  ✅  |
-| GET    | `/api/orders`         | List the user's orders     |  ✅  |
-
-## 🗺️ Roadmap
-
-- [x] Project setup (backend + mobile)
-- [ ] User authentication
-- [ ] Menu browsing
-- [ ] Order management
-- [ ] Table reservations
-- [ ] Online payment integration
-- [ ] Push notifications
-- [ ] Admin dashboard
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome.
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m "Add amazing feature"`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
-## 👤 Author
-
-**Adem Berrabia**
-
-- GitHub: [@Adem-Berrabia](https://github.com/Adem-Berrabia)
+If the phone cannot reach the server, allow ports 5000 and 8081 through your firewall on private networks.
 
 ---
 
-<div align="center">
+## Environment variables
 
-⭐ If you like this project, give it a star!
+`backend/.env`:
 
-</div>
-`````
-`````
+| Variable | Description |
+|---|---|
+| `PORT` | API port, for example `5000` |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Long random secret used to sign tokens |
+| `N8N_WEBHOOK_URL` | Optional. n8n webhook called when an order is created |
+| `OLLAMA_URL` | Optional. Defaults to `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL` | Optional. Defaults to `qwen2.5:3b` |
 
-**To add it on GitHub:**
-1. Open your repo and click **Add file → Create new file**.
-2. Name it `README.md`.
-3. Paste the content and click **Commit changes**.
+Generate a secret with:
 
-Before committing, replace the `[React Native / Flutter...]` placeholders in the Tech Stack table with your real stack, and check the API routes match yours.
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Never commit `.env`. Only `.env.example` is tracked.
+
+---
+
+## REST API overview
+
+Base path: `/api`. Routes marked **admin** require an admin token.
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PATCH /auth/me`, `PATCH /auth/password` |
+| Meals | `GET /meals`, `GET /meals/categories`, `GET /meals/:id`, `POST /meals` (admin), `PUT /meals/:id` (admin), `PATCH /meals/:id/availability` (admin), `DELETE /meals/:id` (admin) |
+| Orders | `POST /orders`, `GET /orders`, `PATCH /orders/:id/cancel` |
+| Reservations | `GET /reservations/availability`, `POST /reservations`, `GET /reservations`, `PATCH /reservations/:id/cancel` |
+| Admin | `GET /admin/stats`, `GET /admin/orders`, `PATCH /admin/orders/:id/status`, `GET /admin/reservations`, `DELETE /admin/reservations/:id`, `GET /admin/users`, `PATCH /admin/users/:id/role` |
+| Chat | `POST /chat` (optional local AI) |
+
+Common status codes: `400` invalid input, `401` not logged in, `403` access denied, `404` not found, `409` conflict (for example a full time slot), `413` request too large, `429` too many requests, `500` server error, `503` assistant unavailable.
+
+---
+
+## Security
+
+- Passwords hashed with bcrypt; JWT tokens expire after 30 days
+- Role checks on the server for every admin route
+- Prices and totals recalculated from the database on every order
+- Sold-out dishes and reservation capacity checked on the server
+- NoSQL injection protection: `$` and `.` keys removed from request bodies
+- Search input is regex-escaped
+- Rate limits on the whole API, login, registration, password change and chat
+- Secure HTTP headers with `helmet`
+- Request size limited, with a larger limit only on photo upload
+- Secrets kept in `.env`, which is excluded from Git
+
+For a public deployment, also use HTTPS and a service such as Cloudflare in front of the server.
+
+---
+
+## Virtual assistant
+
+The assistant helps clients choose a dish and answers questions about allergens and food safety.
+
+1. **Fixed rules come first.** Emergencies, food-poisoning symptoms, allergens, hygiene and risk groups are answered by deterministic rules in the app, with a medical disclaimer. No AI is involved.
+2. **Dish advice** from the rules uses the available dishes (vegetarian, budget, category, recommendations).
+3. **Optional local AI.** When the rules do not understand a question, the app calls `POST /api/chat`. The server sends only the available dishes to a local model through [Ollama](https://ollama.com) and shows only dishes that really exist.
+4. **Fallback.** If Ollama is stopped or too slow, the app keeps the rule-based answer.
+
+To enable the optional AI layer:
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+The assistant gives general information only and has no medical value.
+
+---
+
+## Order alerts with n8n (optional)
+
+When an order is created, the backend sends a small JSON event to an [n8n](https://n8n.io) webhook, which can notify the manager on Telegram.
+
+1. Start n8n with `npx n8n`, then open http://localhost:5678.
+2. Create a workflow with a **Webhook** node (`POST`, path `new-order`) followed by a **Telegram** node (send a text message).
+3. Publish the workflow and set `N8N_WEBHOOK_URL=http://127.0.0.1:5678/webhook/new-order` in `backend/.env`.
+
+If n8n is off, orders still work: the alert is fire-and-forget.
+
+---
+
+## Roadmap
+
+- [ ] Live order status refresh
+- [ ] Dashboard charts (revenue per day, top dishes)
+- [ ] Dish ratings and reviews
+- [ ] Dark mode
+- [ ] Arabic and English translations
+- [ ] Online deployment with HTTPS
+
+---
+
+## Author
+
+**Adem Berrabia**, DSI3
+GitHub: [@Adem-Berrabia](https://github.com/Adem-Berrabia)

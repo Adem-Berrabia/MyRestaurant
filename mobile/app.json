@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "MyRestaurant",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "tn.myrestaurant.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#D9480F"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#D9480F"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MyRestaurant a besoin de votre galerie pour ajouter des photos de plats.",
+          "cameraPermission": "MyRestaurant a besoin de la caméra pour photographier les plats."
+        }
+      ]
+    ]
+  }
+}

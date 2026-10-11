@@ -2,7 +2,7 @@ const express = require("express");
 const Order = require("../models/Order");
 const Meal = require("../models/Meal");
 const { auth } = require("../middleware/auth");
-
+const { notifyNewOrder } = require("../utils/notify");
 const router = express.Router();
 router.use(auth);
 
@@ -31,18 +31,14 @@ router.post("/", async (req, res) => {
       const meal = byId.get(String(p.mealId));
       const q = Number(p.quantite);
       if (!meal || !Number.isInteger(q) || q < 1) {
-        return res
-          .status(400)
-          .json({
-            message: "Un plat du panier n'existe plus. Retirez-le du panier.",
-          });
+        return res.status(400).json({
+          message: "Un plat du panier n'existe plus. Retirez-le du panier.",
+        });
       }
       if (meal.disponible === false) {
-        return res
-          .status(400)
-          .json({
-            message: `« ${meal.nom} » est épuisé. Retirez-le du panier.`,
-          });
+        return res.status(400).json({
+          message: `« ${meal.nom} » est épuisé. Retirez-le du panier.`,
+        });
       }
       lines.push({
         mealId: meal._id,
@@ -62,6 +58,7 @@ router.post("/", async (req, res) => {
       table: type === "sur place" ? String(table).trim() : "",
       note: String(note || "").slice(0, 200),
     });
+    notifyNewOrder(order); // no await: the customer does not wait for the alert
     res.status(201).json(order);
   } catch (e) {
     console.error("POST /orders error:", e);

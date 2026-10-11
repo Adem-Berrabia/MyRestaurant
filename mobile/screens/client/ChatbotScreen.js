@@ -18,7 +18,7 @@ import { answer } from "../../utils/chatbot";
 import { imageUrl } from "../../utils/image";
 import { colors, radius, shadow, formatPrice } from "../../theme";
 import { getMeals, chatRequest } from "../../services/api";
-
+import { useHeaderHeight } from "@react-navigation/elements";
 const QUICK = [
   "Que me conseillez-vous ?",
   "Un plat végétarien",
@@ -31,6 +31,7 @@ const QUICK = [
 ];
 
 export default function ChatbotScreen({ navigation }) {
+  const headerHeight = useHeaderHeight();
   const { user } = useAuth();
   const { addToCart } = useCart();
   const idRef = useRef(1);
@@ -96,8 +97,8 @@ export default function ChatbotScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
+      behavior="padding"
+      keyboardVerticalOffset={headerHeight}
     >
       <View style={styles.banner}>
         <Ionicons

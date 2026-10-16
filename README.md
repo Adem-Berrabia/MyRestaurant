@@ -143,8 +143,8 @@ myrestaurant/
 ### 1. Clone
 
 ```bash
-git clone https://github.com/Adem-Berrabia/MyRestaurant-.git
-cd MyRestaurant-
+git clone https://github.com/Adem-Berrabia/MyRestaurant.git
+cd MyRestaurant
 ```
 
 ### 2. Backend
